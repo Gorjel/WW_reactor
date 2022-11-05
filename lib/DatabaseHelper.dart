@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:http/http.dart';
 import 'dart:math';
-
+import 'dart:convert';
 
 
 
@@ -19,27 +19,50 @@ class SQLHelper {
       """);
   }
 
-  static Future<String> get_sentiment_and_category(answer_feel, answer_want) async {
+    static Future<double> getSentiment(answer_feel) async {
     String body = "";
-    print("sending requets to Dinstance matrix");
     var url = Uri.https('junction2022.bropro.systems');
     Map<String, String> headers = {"Content-type": "application/json"};
+    /// FEEEL part
     String json = '{"text": "$answer_feel"}';
+    // print(json);
     Response response = await post(url, headers: headers, body: json);
     int statusCode = response.statusCode;
-    print(response.body);
     if (statusCode == 200){
-      body = response.body;
-      print(body);
+      var body = response.body;
+      Map<String, dynamic> jsonResponse = jsonDecode(body);
+      double score = jsonResponse['sentiment']['score'];
+      return score;
     }else{
       print("Request failed");
+      return -10;
     }
-    return body;
+  }
+
+  static Future<String> getCategory(answer_want) async {
+    String body = "";
+    var url = Uri.https('junction2022.bropro.systems');
+    Map<String, String> headers = {"Content-type": "application/json"};
+    /// WANT part
+    String json = '{"text": "$answer_want"}';
+    Response response = await post(url, headers: headers, body: json);
+    int statusCode = response.statusCode;
+    if (statusCode == 200){
+      var body = response.body;
+      Map<String, dynamic> jsonResponse = jsonDecode(body);
+      String cat = jsonResponse['categories'][0]['category'];
+      return cat;
+    }else{
+      print("Request failed");
+      return('');
+
+    }
+;
   }
 
   static Future<sql.Database> db() async {
     return sql.openDatabase(
-      'ww_reactor2.db',
+      'ww_reactor3.db',
       version: 1,
       onCreate: (sql.Database database, int version) async {
         await createTables(database);
@@ -51,19 +74,28 @@ class SQLHelper {
   static Future<int> createAnswer(String answer_feel, String  answer_want) async {
     final db = await SQLHelper.db();
 
-    List<String> categories = ['Relationship', 'Family', 'Work', 'Hobby', 'Health'];
-    Random random = Random();
-    int i = max(0, random.nextInt(5));
+    // List<String> categories = ['Relationship', 'Family', 'Work', 'Hobby', 'Health'];
+    var sentiment = await SQLHelper.getSentiment(answer_feel);
+    var category = await SQLHelper.getCategory(answer_want);
 
-    String category = categories[i];
-    var sentiment = random.nextDouble() - 0.5;
+    // Random random = Random();
+    // int i = max(0, random.nextInt(5));
+
+    // String category = categories[i];
+    // var sentiment = random.nextDouble() - 0.5;
 
     //// HERE GET category from database
+    if ((sentiment > -1) & (category != '')){
+      final data = {'answer_feel': answer_feel, 'answer_want': answer_want, 'sentiment': sentiment, 'category' : category};
+      final id = await db.insert('answers', data,
+          conflictAlgorithm: sql.ConflictAlgorithm.replace);
+      return id;
 
-    final data = {'answer_feel': answer_feel, 'answer_want': answer_want, 'sentiment': sentiment, 'category' : category};
-    final id = await db.insert('answers', data,
-        conflictAlgorithm: sql.ConflictAlgorithm.replace);
-    return id;
+    }
+    else{
+      return 0;
+    }
+
   }
 
   // count items per category (journals)

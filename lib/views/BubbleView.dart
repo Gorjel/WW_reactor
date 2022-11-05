@@ -24,61 +24,25 @@ class BubbleViewState extends State<BubbleView> {
 
   bool state = true;
 
-  List<Color> colorsList = [Color(0xFFFA8511),
+  List<Color> colorsList_positive = [Color(0xFFFA8511),
     Color(0xFFF75A5D),
-    Color(0xFFCA518A),
+    Color(0xFFCA518A),];
+
+  List<Color> colorsList_negative = [
     Color(0xFF855896),
     Color(0xFF475681),
-    Color(0xFF2F4858),
-
-
-                            ];
+    Color(0xFF2F4858),];
 
   @override
   void initState() {
     super.initState();
-    // var r1 = await SQLHelper.countAllItems();
-
-    // print(SQLHelper.countAllItems());
-    // print(SQLHelper.countPerCategory());
-    // _addNewNode();
-    // _addNewNode();
-    // _addNewNode();
-    // _addNewNode();
-    // _addNewNode();
-    // _addNewNode();
-    // _addNewNode();
-
   }
 
 
-  // _addNewNode() {
-  //   setState(() {
-  //     Random random = Random();
-  //     BubbleNode node = BubbleNode.leaf(
-  //       value: max(1, random.nextInt(10)),
-  //       options: BubbleOptions(
-  //         color: () {
-  //           Random random = Random();
-  //           // return Colors.primaries[random.nextInt(Colors.primaries.length)];
-  //           return colorsList[random.nextInt(colorsList.length)];
-
-  //         }(),
-  //       child: Text('bla')
-  //       ),
-  //     );
-  //     node.options?.onTap = () {
-  //       setState(() {
-  //         node.value += 1;
-  //         // childNode.remove(node);
-  //       });
-  //     };
-  //     childNode.add(node);
-  //   });
-  // }
+ 
 
 
-  _addNode(int value, String text) {
+  _addNode(int value, String text, String sentiment) {
     setState(() {
       BubbleNode node = BubbleNode.leaf(
         value: value,
@@ -86,7 +50,11 @@ class BubbleViewState extends State<BubbleView> {
           color: () {
             Random random = Random();
             // return Colors.primaries[random.nextInt(Colors.primaries.length)];
-            return colorsList[random.nextInt(colorsList.length)];
+            if (sentiment == 'positive'){
+              return colorsList_positive[random.nextInt(colorsList_positive.length)];
+            }else{
+              return colorsList_negative[random.nextInt(colorsList_negative.length)];
+            }
 
           }(),
         child: Text(text, style: text_f14_w400_white, textAlign: TextAlign.center)
@@ -103,6 +71,7 @@ class BubbleViewState extends State<BubbleView> {
   }
 void load_data() async {
   if (state) {
+    // print(await SQLHelper.getAnswers());
     var count_per_category = await SQLHelper.countPerCategory();
     var max_frequency = (count_per_category[0]['answer_count']);
       List<String> categories = [];
@@ -115,7 +84,7 @@ void load_data() async {
           var sentiment = row['sentiment'] < 0 ? 'negative' : 'positive';
           var cat = row['category'];
 
-          _addNode(size, cat);
+          _addNode(size, cat, sentiment);
       }
       state = false;
 

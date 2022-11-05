@@ -3,6 +3,7 @@ import '../widgets/TextButtonInvisibleBorder.dart';
 import 'package:ww_reactor/styles.dart';
 import 'QuestionViewFeel.dart';
 import 'BubbleView.dart';
+// import '../DatabaseHelper.dart';
 
 
 class InfoView extends StatefulWidget {
